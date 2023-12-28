@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <!-- bootstrap -->
+	<script src="https://unpkg.com/@googlemaps/markerwithlabel/dist/index.min.js"></script>
+    <script type="text/javascript" src="https://lib.sinaapp.com/js/jquery/1.7.2/jquery.min.js"></script>
+    <script src="https://unpkg.com/vue@3.2.37/dist/vue.global.prod.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="/static/css/custom2.css">
+    <link rel="stylesheet" href="/static/css/line_html.css">
+    <script src="/static/js/lodash.js"></script>
+    <script src="/static/js/HTTPreq.js"></script>
+    <script src="/static/js/supportFnc.js"></script>
+    <script src="/static/js/objectExtend.js"></script>
+    <!-- new test @@@@ -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+    <link href="/static/css/map_257.css" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+    <!-- {{polygon | safe}} 可以取得傳給前端的javascript變數並且不由django轉義 -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdGFGqK5bWjF_K1H8iLKpi8sfWRI7y7HU&libraries=&v=weekly" async></script>
+    <!-- 新版map需要移除 &callback=initMap3 -->
+    <script type="text/javascript"> 
+        var polygon = {{polygon | safe}};
+        var centerNode = {{centerNode | safe}};
+        var nodes = {{nodes | safe}};
+        var contentString = {{contentString | safe}};
+        var nodenames = {{nodenames | safe}};
+        var center_lkey = {{center_lkey | safe}};
+        var address = "{{ address }}";
+    </script>
+    <style>
+       /* .custom-popup-class .swal2-popup .swal2-content {
+    max-height: 50vh !important;
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+  } */
+  .custom-popup-class .swal2-content {
+    height: 726px;
+    width: 82vw;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    -webkit-scroll-behavior: smooth; /* 为了平滑滚动 */
+}
+        body{
+            -webkit-overflow-scrolling: touch;
+    -webkit-scroll-behavior: smooth; /* 为了平滑滚动 */
+            letter-spacing: 2px;
+        }
+        #googleMap {
+            height: 134px;
+        }
+        #googleMapPopup {
+            height: 85%;
+            width: 85%;
+        }
+        .in_a {
+            color: #cf4c0d;
+            display: block;
+            width: 100%;
+            height: 80px;
+            text-align: center;
+            line-height:80px;
+            position: relative;
+        }
+        .in_label {
+            display: block;
+            width: 100%;
+            height: 80px;
+            text-align: center;
+            line-height:80px;
+            position: relative;
+        }
+        /* .swal2-popup {
+            transform: scale(1.5);
+        } */
+
+        /* new test @@@@ */
+        #model-container {
+            transform: translate(0%, 0%);
+            background-color: white;
+            text-align: center;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        .bl {
+            border-left: 3px solid rgb(223, 223, 223);
+        }
+
+        .btn-light {
+            background-color: #ebebeb;
+        }
+        .btn6{
+            letter-spacing: 3px;
+            color: #000;
+            background-color: #e3e3e3;
+            border-color: #d3d3d3;
+        }
+        
+        .offcanvas-bottom {
+            height: auto;
+        }
+/* 搬家 */
+.swal2-content div{
+            color: black;
+            text-decoration: none;
+            padding: 3px;
+        }
+        .swal2-content div:hover{
+            background-color: #fff;
+            border-radius: 5px;
+        }
+        .new_bkey{
+            color: #0d6efd;
+        }
+        .ctxScroll{
+            overflow: auto;
+        }
+        .scrollable-content {
+            max-height: 200px; 
+            overflow-y: auto;
+            padding-right: 20px; 
+            }
+        .swal2-content {
+            padding: 8.5px;
+        }
+        .swal2-header {
+            padding: 15px 0px 0px 0px;
+        }
+        .swal2-actions {
+            padding: 0px 0px 10px 0px;
+        }
+        .gm-style .gm-style-iw-c{
+            padding:18px;
+        }
+        .scrollable-content {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f5f5f5;
+}
+
+.scrollable-content::-webkit-scrollbar {
+  width: 15px;
+  background-color: #f5f5f5;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background-color: #6e6e6e;
+  border-radius: 4px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+    color: #fff;
+    background-color: #9f9f9f;
+}
+.dropdown-submenu {
+    position: relative;
+  }
+
+  .dropdown-submenu .dropdown-menu {
+    top: 0; /* Updated position to align with the parent menu item */
+    left: 100%; /* Updated position to align with the right edge of the parent menu item */
+    margin-top: 0.5rem; /* Optional: Adjust this value to change the gap between parent and submenu */
+  }
+  .dropdown-menu {
+    text-align: center;
+    position: static;
+    min-width: 100%;
+    overflow-y: auto;
+    height: 298px;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="lmark" class="bg-white rounded shadow-sm">
+    <h3 class="text-center title d-none">週邊地號<br></h3>
+    <!--地圖顯示 -->
+    <div id="vue_app" v-cloak>
+        <div class="" id="showMap" tabindex="-1" role="dialog" aria-labelledby="showMapLabel" aria-hidden="true">
+            <div class="" role="document">
+                <div class="modal-content">
+                    <div class="modal-body p-0" style="height: 100vh;">
+                       
+
+<div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+  <div class="offcanvas-header mx-3">
+    <h5 class="offcanvas-title" id="offcanvasBottomLabel">實價定位範圍選擇</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body small">
+    <div class="container">
+        <h5 class="fw-bold">目前定位 : <span>{{ address }}</span></h5>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <!-- 門牌 -->
+            <li class="nav-item w-50" role="presentation">
+                <button class="nav-link active w-100" id="door-tab" data-bs-toggle="tab" data-bs-target="#door" type="button"
+                    role="tab" aria-controls="door" aria-selected="true" style="background: #d8eeff;">建物</button>
+            </li>
+            <!-- 地號 -->
+            <li class="nav-item w-50" role="presentation">
+                <button class="nav-link w-100" id="land-tab" data-bs-toggle="tab" data-bs-target="#land" type="button"
+                    role="tab" aria-controls="land" aria-selected="false" style="background:#fff7d8;">土地</button>
+            </li>
+            <!-- 建號 -->
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- 門牌表單欄位 -->
+            <div class="p-3 tab-pane fade show active" id="door" role="tabpanel" aria-labelledby="door-tab" style="background: #d8eeff;">
+                <p class="my-2 fs-6 fw-bold">選取查詢  建物範圍</p>
+                <div class="d-flex justify-content-around">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="flexRadioB" id="flexRadioDefault1" value="3000">
+                        <label class="form-check-label" for="flexRadioDefault1">
+                          3公里內
+                        </label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="flexRadioB" id="flexRadioDefault2" value="5000">
+                        <label class="form-check-label" for="flexRadioDefault2">
+                            5公里內
+                        </label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="flexRadioB" id="flexRadioDefault3" value="10000">
+                        <label class="form-check-label" for="flexRadioDefault3">
+                            10公里內
+                        </label>
+                      </div>
+                </div>
+                <p class="my-2 fs-6 fw-bold">選取查詢 建物範圍</p>
+                <select class="form-select" aria-label="Default select example" id="build_type">
+                    <option selected value="">下拉選項</option>
+                    <option value="辦公商業大樓">辦公商業大樓</option>
+                    <option value="住宅大樓">住宅大樓</option>
+                    <option value="華廈">華廈</option>
+                    <option value="公寓">公寓</option>
+                    <option value="套房">套房</option>
+                    <option value="廠辦">廠辦</option>
+                    <option value="工廠">工廠</option>
+                    <option value="倉庫">倉庫</option>
+                    <option value="磚造">磚造</option>
+                    <option value="加強磚造">加強磚造</option>
+                    <option value="木造">木造</option>
+                    <option value="店面">店面</option>
+                    <option value="農舍">農舍</option>
+                    <option value="透天厝">透天厝</option>
+                </select>
+                <a class="btn btn-primary w-100 my-3 searchB">進入查詢結果</a>
+                <a class="btn btn-danger w-100" href="https://www.surveycake.com/s/29b3K">參加調研抽獎</a>
+            </div>
+            <!-- 地號表單欄位 -->
+            <div class="p-3 tab-pane fade" id="land" role="tabpanel" aria-labelledby="land-tab" style="background:#fff7d8;">
+                <p class="my-2 fs-6 fw-bold">選取土地範圍</p>
+                <div class="d-flex justify-content-around">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="flexRadioL" id="flexRadioDefault1" value="3000">
+                        <label class="form-check-label" for="flexRadioDefault1">
+                          3公里內
+                        </label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="flexRadioL" id="flexRadioDefault2" value="5000">
+                        <label class="form-check-label" for="flexRadioDefault2">
+                            5公里內
+                        </label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="flexRadioL" id="flexRadioDefault3" value="10000">
+                        <label class="form-check-label" for="flexRadioDefault3">
+                            10公里內
+                        </label>
+                      </div>
+                </div>
+                <p class="my-2 fs-6 fw-bold">選擇土地類別</p>
+                <div class="container mt-5">
+                    <ul class="nav nav-pills mb-3 w-100" id="pills-tab" role="tablist">
+                      <li class="nav-item w-50" role="presentation">
+                        <button class="nav-link w-100" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">都外土地</button>
+                        
+                      </li>
+                      <li class="nav-item w-50" role="presentation">
+                        <button class="nav-link w-100 active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">都內土地</button>
+                      </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                      <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+                            <select class="form-select" aria-label="Default select example" id="land_outcity">
+                                <option selected value="">都外土地</option>
+                                <option value="甲種建築用地">甲種建築用地</option>
+                                <option value="乙種建築用地">乙種建築用地</option>
+                                <option value="丙種建築用地">丙種建築用地</option>
+                                <option value="丁種建築用地">丁種建築用地</option>
+                                <option value="墳墓用地">墳墓用地</option>
+                                <option value="殯葬用地">殯葬用地</option>
+                                <option value="林業用地">林業用地</option>
+                                <option value="水利用地">水利用地</option>
+                                <option value="礦業用地">礦業用地</option>
+                                <option value="窯業用地">窯業用地</option>
+                                <option value="農牧用地">農牧用地</option>
+                                <option value="交通用地">交通用地</option>
+                                <option value="遊憩用地">遊憩用地</option>
+                                <option value="養殖用地">養殖用地</option>
+                                <option value="鹽業用地">鹽業用地</option>
+                                <option value="生態保護用地">生態保護用地</option>
+                                <option value="特定目的事業用地">特定目的事業用地</option>
+                                <option value="古蹟保存用地">古蹟保存用地</option>
+                                <option value="國土保安用地">國土保安用地</option>
+                            </select>
+                       
+                      </div>
+                      <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
+                            <div class="dropup">
+                              <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown"style="color: #575757; background-color: #ffffff;
+                              border-color: #c3c3c3;">請選擇
+                              <span class="caret"></span></button>
+                              <ul class="dropdown-menu p-2">
+                                <li class="dropdown-submenu">
+                                  <p class="test" href="#">私有公用目<span class="caret"></span></p>
+                                  <ul class="dropdown-menu p-2">
+                                    <li><p href="#">防風林區</p></li>
+                                    <li><p href="#">堤防用地</p></li>
+                                    <li><p href="#">變電所用地</p></li>
+                                    <li><p href="#">地質保護區</p></li>
+                                    <li><p href="#">辦公服務區</p></li>
+                                    <li><p href="#">國家公園區</p></li>
+                                    <li><p href="#">核能電廠用地</p></li>
+                                    <li><p href="#">國家公園遊憩區</p></li>
+                                    <li><p href="#">旅遊服務中心區</p></li>
+                                    <li><p href="#">通訊數位專用區</p></li>
+                                    <li><p href="#">電力事業專用區</p></li>
+                                    <li><p href="#">垃圾處理場用地</p></li>
+                                  </ul>
+                                </li>
+                                <li class="dropdown-submenu">
+                                    <p class="test" href="#">交通用地目<span class="caret"></span></p>
+                                    <ul class="dropdown-menu p-2">
+                                        <li><p href="#">交通用地</p></li>
+                                        <li><p href="#">車站用地</p></li>
+                                        <li><p href="#">轉運專用區</p></li>
+                                        <li><p href="#">高速公路用地</p></li>
+                                        <li><p href="#">高速鐵路用地</p></li>
+                                        <li><p href="#">高架鐵路用地</p></li>
+                                        <li><p href="#">鐵路事業用地</p></li>
+                                        <li><p href="#">遊艇港專用區</p></li>
+                                        <li><p href="#">貨運轉運中心區</p></li>
+                                        <li><p href="#">車站特定專用區</p></li>
+                                        <li><p href="#">捷運系統用地</p></li>
+                                        <li><p href="#">民用航空站用地</p></li>
+                                    </ul>
+                                  </li>
+                                  <li class="dropdown-submenu">
+                                    <p class="test" href="#">水資源地目<span class="caret"></span></p>
+                                    <ul class="dropdown-menu p-2">
+                                        <li><p href="#">行水區</p></li>
+                                        <li><p href="#">河川區</p></li>
+                                        <li><p href="#">自來水事業用地</p></li>
+                                        <li><p href="#">水利用地</p></li>
+                                        <li><p href="#">水庫保護區</p></li>
+                                        <li><p href="#">水庫集水區</p></li>
+                                        <li><p href="#">汙水處理廠用地</p></li>
+                                        <li><p href="#">抽水站用地</p></li>
+                                        <li><p href="#">排水道用地</p></li>
+                                        <li><p href="#">下水道用地</p></li>
+                                        <li><p href="#">圳渠溝渠用地</p></li>
+                                        <li><p href="#">防洪調節池用地</p></li>
+                                    </ul>
+                                  </li>
+                                  <li class="dropdown-submenu">
+                                    <p class="test" href="#">生活服務地目<span class="caret"></span></p>
+                                    <ul class="dropdown-menu p-2">
+                                        <li><p href="#">生活服務區</p></li>
+                                        <li><p href="#">特定專用區</p></li>
+                                        <li><p href="#">研究專用區</p></li>
+                                        <li><p href="#">社教專用區</p></li>
+                                        <li><p href="#">宗教專用區</p></li>
+                                        <li><p href="#">醫療服務用地</p></li>
+                                        <li><p href="#">文事研究中心區</p></li>
+                                        <li><p href="#">健康休閒專用區</p></li>
+                                        <li><p href="#">安養中心專用區</p></li>
+                                    </ul>
+                                  </li>
+                                  <li class="dropdown-submenu">
+                                    <p class="test" href="#">公設用地目<span class="caret"></span></p>
+                                    <ul class="dropdown-menu p-2">
+                                        <li><p href="#">綠帶用地</p></li>
+                                        <li><p href="#">綠地用地</p></li>
+                                        <li><p href="#">機關用地</p></li>
+                                        <li><p href="#">市場用地</p></li>
+                                        <li><p href="#">零售市場用地</p></li>
+                                        <li><p href="#">批發市場用地</p></li>
+                                        <li><p href="#">停車場用地</p></li>
+                                        <li><p href="#">加油站專用區</p></li>
+                                        <li><p href="#">人行專用步道用地</p></li>
+                                        <li><p href="#">體育場用地</p></li>
+                                        <li><p href="#">運動場用地</p></li>
+                                        <li><p href="#">青年活動中心區</p></li>
+                                        <li><p href="#">兒童遊戲場用地</p></li>
+                                        <li><p href="#">廣場(兼停車場)用地</p></li>
+                                        <li><p href="#">公園用地</p></li>
+                                        <li><p href="#">公園保留地</p></li>
+                                        <li><p href="#">公園兼供兒童遊樂場用地</p></li>
+                                        <li><p href="#">公墓用地</p></li>
+                                        <li><p href="#">墳墓用地</p></li>
+                                        <li><p href="#">殯葬設施用地</p></li>
+                                        <li><p href="#">公用及公益事業特定專</p></li>
+                                        <li><p href="#">公共設施保留地</p></li>
+                                        <li><p href="#">道路用地</p></li>
+                                        <li><p href="#">公設保留地-道路用地</p></li>
+                                        <li><p href="#">都市計畫道路用地</p></li>
+                                        <li><p href="#">未完成細部計劃道路用地</p></li>
+                                        <li><p href="#">文教區</p></li>
+                                        <li><p href="#">學校用地</p></li>
+                                        <li><p href="#">學校預定用地</p></li>
+                                    </ul>
+                                  </li>
+                                  <li class="dropdown-submenu">
+                                    <p class="test" href="#">建築用地目<span class="caret"></span></p>
+                                    <ul class="dropdown-menu p-2">
+                                        <li><p href="#">農業區</p></li>
+                                        <li><p href="#">農業區(建地目)</p></li>
+                                        <li><p href="#">農業區(申請變更產業支援區)</p></li>
+                                        <li><p href="#">住宅區</p></li>
+                                        <li><p href="#">低密度住宅區</p></li>
+                                        <li><p href="#">住宅區(附帶條件)</p></li>
+                                        <li><p href="#">住宅區(細部計畫尚未完成，尚未能准許依變更後計畫用途使用)</p></li>
+                                        <li><p href="#">甲種住宅區</p></li>
+                                        <li><p href="#">乙種住宅區</p></li>
+                                        <li><p href="#">第一種住宅用地</p></li>
+                                        <li><p href="#">第二種住宅用地</p></li>
+                                        <li><p href="#">第三種住宅區</p></li>
+                                        <li><p href="#">第四種住宅區</p></li>
+                                        <li><p href="#">第四之一種住宅區。</p></li>
+                                        <li><p href="#">第五種住宅區(附)</p></li>
+                                        <li><p href="#">第五之一種住宅區</p></li>
+                                        <li><p href="#">第六種住宅區</p></li>
+                                        <li><p href="#">第七種住宅區</p></li>
+                                    
+                                        <li><p href="#">商業用地。</p></li>
+                                        <li><p href="#">工商混合區</p></li>
+                                        <li><p href="#">住商混合區</p></li>
+                                        <li><p href="#">商務專用區</p></li>
+                                        <li><p href="#">特定商業區</p></li>
+                                        <li><p href="#">複合商業區</p></li>
+                                        <li><p href="#">聯合開發區(捷)。</p></li>
+                                        <li><p href="#">副都心商業區</p></li>
+                                        <li><p href="#">第一種商業區。</p></li>
+                                        <li><p href="#">第二種商業區。</p></li>
+                                        <li><p href="#">第三種商業區。</p></li>
+                                        <li><p href="#">第四種商業區。</p></li>
+                                        <li><p href="#">第四之一種商業區</p></li>
+                                        <li><p href="#">第五種商業區</p></li>
+                                        <li><p href="#">第五之一種商業區</p></li>
+                                        <li><p href="#">第一種新市政中心專用區</p></li>
+                                        <li><p href="#">第二種新市政中心專用區</p></li>
+                                        <li><p href="#">第三種新市政中心專用區</p></li>
+                                        <li><p href="#">第四種特定經貿核心專用區</p></li>
+                                        <li><p href="#">第五種新市政中心專用區</p></li>
+                                        <li><p href="#">第六種特定經貿核心專用區</p></li>
+                                        <li><p href="#">第六種新市政中心專用區</p></li>
+                                        <li><p href="#">第七種特定經貿核心專用區</p></li>
+                                        <li><p href="#">第七種新市政中心專用區</p></li>
+                                        <li><p href="#">工業區</p></li>
+                                        <li><p href="#">甲種工業區</p></li>
+                                        <li><p href="#">乙種工業區</p></li>
+                                        <li><p href="#">工業住宅區</p></li>
+                                        <li><p href="#">零星工廠區</p></li>
+                                        <li><p href="#">產業專用區</p></li>
+                                        <li><p href="#">科技工業區</p></li>
+                                        <li><p href="#">科技產業專用區</p></li>
+                                        <li><p href="#">科技商務專用區</p></li>
+                                        <li><p href="#">第一種工業區</p></li>
+                                        <li><p href="#">第二種工業區</p></li>
+                                        <li><p href="#">甲種旅館區</p></li>
+                                        <li><p href="#">乙種旅館區</p></li>
+                                        <li><p href="#">丙種旅館區</p></li>
+                                        <li><p href="#">第一種旅館區</p></li>
+                                        <li><p href="#">第二種旅館區</p></li>
+                                        <li><p href="#">甲種風景區</p></li>
+                                        <li><p href="#">乙種風景區</p></li>
+                                        <li><p href="#">甲種遊樂區</p></li>
+                                        <li><p href="#">乙種遊樂區</p></li>
+                                    </ul>
+                                  </li>
+                                  <li class="dropdown-submenu">
+                                    <p class="test" href="#">生活休閒地目<span class="caret"></span></p>
+                                    <ul class="dropdown-menu p-2">
+                                        <li><p href="#">露營區</p></li>
+                                        <li><p href="#">濱海遊憩區</p></li>
+                                        <li><p href="#">景觀保護區</p></li>
+                                        <li><p href="#">示範茶園區</p></li>
+                                        <li><p href="#">森林公園用地</p></li>
+                                        <li><p href="#">自然村專用區</p></li>
+                                        <li><p href="#">露天溫泉浴區</p></li>
+                                        <li><p href="#">溫泉產業特定專用區</p></li>
+                                        <li><p href="#">娛樂專用區(特)</p></li>
+                                        <li><p href="#">高爾夫球場專用區</p></li>
+                                        <li><p href="#">休閒專用區</p></li>
+                                        <li><p href="#">休閒農業特定專用區。</p></li>
+                                        <li><p href="#">休閒遊憩區</p></li>
+                                        <li><p href="#">觀光休閒特定專用區</p></li>
+                                        <li><p href="#">觀光服務專用區</p></li>
+                                        <li><p href="#">觀光農場區</p></li>
+                                    </ul>
+                                  </li>
+                                  <li class="dropdown-submenu">
+                                    <p class="test" href="#">其他用地目<span class="caret"></span></p>
+                                    <ul class="dropdown-menu p-2">
+                                        <li><p href="#">倉儲區</p></li>
+                                        <li><p href="#">倉庫區</p></li>
+                                        <li><p href="#">鹽田區</p></li>
+                                        <li><p href="#">保存區</p></li>
+                                        <li><p href="#">保護區</p></li>
+                                        <li><p href="#">古蹟保存區</p></li>
+                                        <li><p href="#">漁業專用區</p></li>
+                                        <li><p href="#">傳統聚落保存區</p></li>
+                                        <li><p href="#">原住民文化專用區</p></li>
+                                        <li><p href="#">斷層帶住宅限建區</p></li>
+                                        <li><p href="#">土石方資源堆置場用地</p></li>
+                                    </ul>
+                                  </li>
+                              </ul>
+                            </div>
+                      </div>
+                      <a class="btn btn-primary w-100 my-3 searchL">進入查詢結果</a>
+                      <a class="btn btn-danger w-100" href="https://www.surveycake.com/s/29b3K">參加調研抽獎</a>
+                    </div>
+                  </div>
+              
+
+            </div>
+
+            <!-- 建號表單欄位 -->
+            
+        </div>
+       
+      
+        
+      </div>
+   
+  </div>
+</div>
+                        <div class="" id="googleMapPopup" style="height:93.5%; width: 100%;"></div>
+                        <button class="btn btn-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">點擊實價定位範圍</button>
+                        <!-- new test @@@@ -->
+                       
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h6 class="topxss d-none"><strong>＊預估調閱費用為一般調閱(每筆所有權人計扣10點)，快速調閱費用(每筆所有權人計扣12點)，取用庫存費用(依時間長短另計)</strong></h6>
+
+    <!--清單顯示 -->
+    <div style="display: none;"><!--隱藏清單 -->
+        <div id="vue_app2" style="width: min(1028px, 100%);">
+            <div class="row">
+                <div class="col-md-12">
+                    <table>
+                        <thead>
+                            <tr class="bluetable">
+                                <th width="20%">
+                                    <h6 class="topxss"><strong>門牌/建號/地號</strong></h6>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="diaplay_detail">
+                            {% for nodenames_lkey, one_nodes in zip_data %}
+                            <tr id="{{nodenames_lkey}}_tr">
+                                <td data-label="門牌/建號/地號" data-th="門牌/建號/地號">
+                                    <a onclick="check_buy(this)" class="in_a" id="show_{{nodenames_lkey}}_{{id}}" name="{{one_nodes.lat}}_{{one_nodes.lng}}">{{nodenames_lkey}}</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="new_lbkey_list">
+        </div>
+    </div>
+    <div class="loading">
+        <div class="mask"></div>
+    </div>
+
+    <script>
+        let selectedItemText = ''
+        document.addEventListener('DOMContentLoaded', function() {
+        var dropdownSubmenus = document.querySelectorAll('.dropdown-submenu');
+
+        dropdownSubmenus.forEach(function(submenu) {
+            submenu.querySelector('.test').addEventListener('click', function(e) {
+            var submenuDropdown = this.nextElementSibling;
+            submenuDropdown.classList.toggle('show');
+            e.stopPropagation();
+            e.preventDefault();
+            });
+        });
+
+        var dropdownItems = document.querySelectorAll('.dropdown-menu p');
+
+        dropdownItems.forEach(function(item) {
+            item.addEventListener('click', function() {
+            selectedItemText = this.textContent;
+            document.querySelector('.dropdown-toggle').textContent = selectedItemText + ' ';
+            document.querySelector('.dropdown-toggle').appendChild(document.createElement('span')).classList.add('caret');
+            });
+        });
+        });
+
+        function HTTPreqx(method, url, data, headers, callback_success) {//API基礎
+            var Xreq = new XMLHttpRequest();
+            Xreq.open(method, url);
+            for (var i in headers) {
+                Xreq.setRequestHeader(i, headers[i]);
+            }
+            Xreq.onreadystatechange = function () {
+                if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+                    callback_success(Xreq.responseText);
+                }
+                else if (this.status !== 200) {
+                    console.log("API連接失敗");
+                    Swal.fire("未選擇調閱項目");
+                    toggleLoading(false);
+                }
+            }
+            Xreq.send(data);
+        }
+
+        function toggleLoading(show) {
+            document.querySelector('.loading').style.display =	show ? 'block' : 'none';
+        }
+
+        function check_buy(myobj){
+            console.log(myobj.name)
+            let lkey =  myobj.id.split("_")[1] + "_" + myobj.id.split("_")[2] + "_" + myobj.id.split("_")[3] + "_" + myobj.id.split("_")[4]
+            let id = myobj.id.split("_")[5]
+            let lat = myobj.name.split("_")[0]
+            let lng = myobj.name.split("_")[1]
+            Swal.fire({
+                customClass: {popup: 'swal2-popup'},
+                heightAuto: false, //控制彈窗大小 全部彈窗都會受到影響
+                showDenyButton: true,
+                title: "請選擇地建號",
+                confirmButtonText: '地號',
+                confirmButtonColor:'#fff',
+                denyButtonText: '建號',
+                denyButtonColor:'#FF44AA',
+            }).then((result) => {
+                if (result.dismiss == "backdrop"){
+                }else if (result.isConfirmed) {
+                    Swal.fire({title: "目前不提供查詢地號實價",})
+                } else if (result.isDenied) {
+                    let sendData = new FormData()
+                    sendData.append("lkey", lkey)
+                    sendData.append("lat", lat)
+                    sendData.append("lng", lng)
+                    toggleLoading(true);
+                    HTTPreqx(
+                        "POST",
+                        window.location.origin + "/line_bot/" + "aroundLbkeyMapping/",
+                        sendData,
+                        {},
+                        function (res) {
+                            res = JSON.parse(res);
+                            console.log(res);
+                            if (res.data.length == 0 || res.status == "NG"){
+                                Swal.fire({title: "查無相關建號"});
+                                toggleLoading(false);
+                            } else{
+                                let sendData2 = new FormData()
+                                sendData2.append("lbkey", JSON.stringify(res.data))
+                                sendData2.append("lbkeytype", "B")
+                                HTTPreqx(
+                                    "POST",
+                                    window.location.origin + "/line_bot/" + "OutToActualPrice/",
+                                    sendData2,
+                                    {},
+                                    function (res2) {
+                                        res2 = JSON.parse(res2);
+                                        console.log(res2);
+                                        toggleLoading(false);
+                                        var url = "https://www.yeshome.net.tw/line_bot/map_actualprice_257/"; 
+                                        var data = JSON.stringify(res2.data); // 要传递的数据
+
+
+                                        // 创建一个隐藏的表单
+                                        var form = document.createElement('form');
+                                        form.method = 'POST';
+                                        form.action = url;
+
+                                        // 创建一个隐藏的输入字段，将数据作为值传递
+                                        var input = document.createElement('input');
+                                        input.type = 'hidden';
+                                        input.name = 'data';
+                                        input.value = data;
+                                        form.appendChild(input);
+
+                                        // 将表单添加到文档中并提交
+                                        document.body.appendChild(form);
+                                        form.submit(); 
+                                    }
+                                );
+                            }
+                        }
+                    );
+                }
+            })
+        }
+
+        function get_pol(type, value) {
+            var r = [], center = [0, 0];
+            if (type == 'MULTIPOLYGON') {
+                var tmp, totalL = 0;
+                value = value.slice(15, value.length - 1).match(/\(\([\d\.\,\s]+\)\)/g);
+                for (var i in value) {
+                    tmp = get_pol('POLYGON', 'POLYGON ' + value[i]);
+                    r[i] = tmp[0]
+                    center[0] += tmp[1][0] * tmp[2];
+                    center[1] += tmp[1][1] * tmp[2];
+                    totalL += tmp[2];;
+                }
+                center[0] /= totalL;
+                center[1] /= totalL;
+                return [r, center];
+            }
+            else if (type == 'POLYGON') {
+                value = value.slice(10,).replace('))', '').split(', ');
+                for (var i in value) {
+                    value[i] = value[i].split(' ');
+                    r[i] = { lng: parseFloat(value[i][0]), lat: parseFloat(value[i][1]) };
+                    center[0] += parseFloat(value[i][0]);
+                    center[1] += parseFloat(value[i][1]);
+                }
+                center[0] /= value.length;
+                center[1] /= value.length;
+                return [r, center, value.length];
+            }
+            else{
+                center = value.slice(7,value.length-1).split(" ");
+                center[0] = parseFloat(center[0])
+                center[1] = parseFloat(center[1])
+                r = {lng: center[0], lat: center[1]};
+                return [r, center, 1];
+            }
+        }
+
+        function get_data(raw_data) {
+            var r = {}, tmp, type = raw_data.match('MULTIPOLYGON') ? "MULTIPOLYGON" : raw_data.match('POLYGON') ? "POLYGON" : "POINT", max = {lng:0, lat:0}, min = {lng:999, lat:999}, tmp;
+            tmp = get_pol(type, raw_data);
+            r.polygon = tmp[0];
+            r.center = { lng: tmp[1][0], lat: tmp[1][1] };
+            r.type = type;
+            if (type == "MULTIPOLYGON") {
+                for(var i in r.polygon){
+                    for(var j in r.polygon[i]){
+                        if(r.polygon[i][j].lng > max.lng){max.lng = r.polygon[i][j].lng;}
+                        else if(r.polygon[i][j].lng < min.lng){min.lng = r.polygon[i][j].lng;} 
+                        if(r.polygon[i][j].lat > max.lat){max.lat = r.polygon[i][j].lat;}
+                        else if(r.polygon[i][j].lat < min.lat){min.lat = r.polygon[i][j].lat;}
+                    }
+                }
+            }
+            else if (type == "POLYGON"){
+                for(var i in r.polygon){
+                    if(r.polygon[i].lng > max.lng){max.lng = r.polygon[i].lng;}
+                    else if(r.polygon[i].lng < min.lng){min.lng = r.polygon[i].lng;} 
+                    if(r.polygon[i].lat > max.lat){max.lat = r.polygon[i].lat;}
+                    else if(r.polygon[i].lat < min.lat){min.lat = r.polygon[i].lat;}
+                }
+            }
+            else{
+                max.lat = min.lat = r.polygon.lat;
+                max.lng = min.lng = r.polygon.lng;
+            }
+            r.range = {};
+            r.range.lat = {max: max.lat, min: min.lat};
+            r.range.lng = {max: max.lng, min: min.lng};
+            r.zoom = Math.min(-Math.log2(Math.max(r.range.lng.max - r.range.lng.min, r.range.lat.max - r.range.lat.min)), 12);
+            return r;
+        }
+
+        function initMap3(divID, data, centerNode, nodes, contentString, nodenames) {
+            var map, polygons = [], infowindows = [];
+            // polygonsss = [];
+
+            map = new google.maps.Map(document.getElementById(divID), {
+                zoom: 20,
+                center: centerNode,
+                //mapTypeId: "terrain",
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            });
+
+            // 測試鎖住地圖頁面
+            // map.setOptions({draggable: false, zoomControl: true, scrollwheel: true, disableDoubleClickZoom: true});
+
+            /*使用者位置顯示*/
+            var centerNode_point = new markerWithLabel.MarkerWithLabel({
+                map: map,
+                title: "使用者位置",
+                position: centerNode,
+                labelContent: "使用者位置",
+                labelAnchor: { x: 0, y: -10 },/*由css控制方塊位置*/
+                labelClass: "my-custom-class-for-label",
+            });
+
+            /*建立多邊形*/
+            for (let one_data in data){
+                var pgn = get_data(data[one_data]);
+                if(!pgn) return;
+                if(pgn.type == "POINT"){
+                    const googleMapPopup = new google.maps.Marker({
+                        position: pgn.polygon,
+                        map: map,
+                        title:'test',
+                    });
+                    googleMapPopup.setMap(map);
+                }else{
+                    if(nodenames[one_data] == center_lkey[0]){
+                        color = "#ffff00"
+                    }else{
+                        color = "#FF5151"
+                    }
+                    polygons.push(new google.maps.Polygon({
+                        paths: pgn.polygon,
+                        strokeColor: "#FF5151",
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: color,
+                        fillOpacity: 0.35,
+                        id: nodenames[one_data],
+                        }));
+                }
+            }
+
+            /*建立info視窗*/
+            for (let one_nodes in nodes) {
+                var lkey = nodenames[one_nodes];
+                var one = String(Number(lkey.substring(10, 14)));
+                var two = String(Number(lkey.substring(15, 19)));
+                if(two == "0"){
+                    var lkey = one;
+                }else{
+                    var lkey = one + "-" + two;
+                }
+
+                var test_nodes = new markerWithLabel.MarkerWithLabel({
+                    map: map,
+                    title: nodenames[one_nodes],
+                    position: nodes[one_nodes],
+                    labelContent: lkey,
+                    labelAnchor: { x: 0, y: -10 },/*由css控制方塊位置*/
+                    labelClass: "my-custom-class-for-label",
+                    // disable icon
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 0,
+                    },
+                });
+
+                let infowindow = new google.maps.InfoWindow({
+                    content: contentString[one_nodes],
+                });
+
+                const clickFnc = () => {
+                    for(var i in polygons){
+                        polygons[i].setOptions({fillColor: i==one_nodes ? 'yellow' : color});
+                        infowindows[i].close();
+                    }
+                    infowindow.open({
+                        anchor: test_nodes,
+                        map: map,
+                        shouldFocus: false,
+                    });
+                    infowindow.setPosition(nodes[one_nodes])
+                }
+
+                test_nodes.addListener("click", clickFnc);
+
+                google.maps.event.addListener(polygons[one_nodes], 'click', clickFnc);
+
+                var a = 1;
+                infowindow.addListener('domready',function() {
+                    var test_button = nodenames[one_nodes] + "test_button";
+                    var btn = document.getElementById(test_button);
+                    btn.addEventListener('click', function() {
+                        var all_class_name = document.getElementsByClassName("in_a");
+                        for(var i=0;i<all_class_name.length;i++){
+                            if (all_class_name[i].id.includes(nodenames[one_nodes] )){
+                                all_class_name[i].click()
+                                console.log("click")
+                                console.log(all_class_name[i].id)
+                            }
+                        }
+                    });
+                });
+                
+                infowindows.push(infowindow);
+            }
+
+            polygons.forEach(function(poly){
+                poly.setMap(map);
+            });
+
+        }
+
+        /*網頁載入完畢後立刻執行*/
+        window.onload=function(){
+            // 土地
+            document.querySelectorAll(".searchL").forEach((e) => {
+                e.addEventListener("click", function (e) {
+                    // 抓取距離
+                    let lable = document.querySelector("input[name='flexRadioL']:checked")?.value;
+                    // 抓取都內
+                    // var selectElement_in = document.getElementById('mainSelect');
+                    // var selectedIndex_in = selectElement_in.selectedIndex;
+                    // var options_in = selectElement_in.options;
+                    // var incity = options_in[selectedIndex_in].value;
+                    var incity = selectedItemText
+                    // 抓取都外
+                    var selectElement_out = document.getElementById('land_outcity');
+                    var selectedIndex_out = selectElement_out.selectedIndex;
+                    var options_out = selectElement_out.options;
+                    var outcity = options_out[selectedIndex_out].value;
+                    // 判斷都內都外
+                    if (incity) {
+                        saleDetail("L", lable, incity, '都內');
+                    } else if (outcity) {
+                        saleDetail("L", lable, outcity, '都外');
+                    } else {
+                        saleDetail("L", lable, '', '');
+                    }
+                    // // get integer of innerText
+                    // let lable = parseInt(e.target.innerText.match(/\d/g).join(""));
+                    // // if '公里' in innerText label = label * 1000;
+                    // if (e.target.innerText.includes("公里")) lable *= 1000;
+                    // saleDetail("L", lable);
+                });
+            });
+
+            // 建物
+            document.querySelectorAll(".searchB").forEach((e) => {
+                e.addEventListener("click", function (e) {
+                    let lable = document.querySelector("input[name='flexRadioB']:checked")?.value;
+                    var selectElement = document.getElementById('build_type');
+                    var selectedIndex = selectElement.selectedIndex;
+                    var options = selectElement.options;
+                    let build_type = options[selectedIndex].value;
+                    saleDetail("B", lable, build_type, '');
+                    // // get integer of innerText
+                    // let lable = parseInt(e.target.innerText.match(/\d/g).join(""));
+                    // // if '公里' in innerText label = label * 1000;
+                    // if (e.target.innerText.includes("公里")) lable *= 1000;
+                    // saleDetail("B", lable);
+                });
+            });
+            initMap3("googleMapPopup", polygon, centerNode, nodes, contentString, nodenames)
+        }
+
+            const saleDetail = (lbtype, lable, lb_select, inout) => {
+                // use Swal to show and close when done
+                // 檢查log
+                console.log('距離：', lable)
+                console.log('選項：', lb_select)
+                console.log('土地都內外：', inout)
+                if (lable) {
+                    Swal.fire({
+                        title: '查詢中',
+                        html: '請稍後...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading()
+                        },
+                    });
+                    new HTTPreq("/line_bot/actualPrice/", "fd").posta({lbtype, lable, address, lat: centerNode.lat, lng: centerNode.lng, lb_select: lb_select, inout: inout}).then(rcv => {
+                        Swal.close();
+                        // console.log(rcv.result)
+                        if(rcv.status !=  200){
+                            Swal.fire(rcv.result);
+                            return;
+                        }
+                        const res = supfnc.toJSON(rcv.result);
+                        var url = "https://www.yeshome.net.tw/line_bot/map_actualprice_257/"; 
+
+                        // 创建一个隐藏的表单
+                        var form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = url;
+
+                        // 创建一个隐藏的输入字段，将数据作为值传递
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'data';
+                        input.value = `[${rcv.result}]`;
+                        form.appendChild(input);
+
+                        // 将表单添加到文档中并提交
+                        document.body.appendChild(form);
+                        form.submit(); 
+                    })
+                } else {
+                    Swal.fire({
+                        title: '請選擇距離',
+                        // html: '請稍後...',
+                    });
+                }
+            }
+    </script>
+    <script>
+
+</script>
+</body>
+
+</html>
